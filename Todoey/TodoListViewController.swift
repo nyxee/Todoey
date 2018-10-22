@@ -50,16 +50,18 @@ class TodoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //MARK: Add new items
+    //MARK: Add new items using alerts (Fialog Boxes)
     
     @IBAction func addButtonPressed(_ sender: Any) {
         var textField = UITextField()
         
-        let alert = UIAlertController(title: "Add NEw Todoey Item", message: "", preferredStyle: .alert)
-        let action = UIAlertAction(title: "Add Item", style: .default) { (alert) in
+        let alert = UIAlertController(title: "Add New Todoey Item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what will happen once the user clicks the Add Item button on our UIAlert
             self.itemArray.append(textField.text!)
             self.tableView.reloadData()
+            
+            //action.style = UIAlertActionStyle.default
         }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create New Item"
