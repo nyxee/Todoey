@@ -7,22 +7,31 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
     
     var itemTittlesArray = ["Find Mike", "Buy Eggs", "Destroy Demogorgon", "As", "people", "fleeing", "from", "various", "regimes,", "their", "ideology", "was", "understandably", "anti-Bachwezi,", "anti-Babito", "and", "anti-Bahima.", "It", "is", "not", "surprising", "that", "traditions", "linking", "Buganda", "to", "any", "of", "the", "three", "groups", "have", "been", "suppressed,", "even", "where", "the", "evidence", "is", "overwhelming.", "For", "instance,", "when", "we", "compare", "the", "Bachwezi", "traditions", "of", "Bunyoro", "and", "Nkore", "with", "the", "traditions", "of", "Buganda,", "which", "rarely", "refer", "to", "the", "Bachwezi,", "we", "find", "several", "similarities", "which", "historians", "cannot", "afford", "to", "ignore.", "In", "Bunyoro", "and", "Nkore", "the", "gatekeeper", "of", "King", "Isaza", "of", "Kitara", "was", "Bukulu", "of", "the", "Balanzi", "clan.", "On", "the", "Sesse", "Islands", "the", "traditions", "of", "the", "otter", "clan", "–", "which", "is", "the", "same", "as", "the", "Balanzi", "clan", "–", "name", "one", "Bukulu.", "In", "Bunyoro", "and", "Nkore,", "the", "daughter", "of", "Bukulu,", "and", "hence", "the", "mother", "of", "King", "Ndahura,", "was", "Nyinamwiru.", "The", "Kiganda", "equivalent", "is", "Namuddu,", "who", "is", "widely", "found", "in", "Sesse", "legends.", "From", "the", "west", "we", "learn", "that", "Bukulu’s", "grandson", "was", "called", "Mugasha,", "and", "in", "Buganda", "tradition", "gives", "the", "name", "of", "Bukulu’s", "grandson", "as", "Mukasa.", "W", "e", "learn", "from", "the", "traditions", "of", "Nkore", "that", "Mugasha", "disappeared", "in", "Lake", "Victoria;", "according", "to", "Bunyoro", "tradition,", "King", "Wamara", "disappeared", "into", "the", "lake", "and", "he", "was", "also", "responsible", "for", "the", "construction", "of", "Lake", "Wamala.", "In", "Buganda,", "Wamala,", "who", "is", "a", "descendant", "of", "Bukulu,", "is", "associated", "with", "the", "making", "of", "the", "same", "lake.", "Moreover,", "just", "as", "the", "Bachwezi", "spirits", "are", "deified", "in", "the", "Kitara", "complex", "area,", "the", "Buganda", "deify", "the", "spirits", "of", "the", "descendants", "of", "Bukulu,", "such", "as", "Nende", "and", "Mukasa.", "Is", "it", "not", "possible,", "therefore,", "that", "the", "descendants", "of", "Bukulu", "in", "Buganda were", "Bachwezi?"]
     
     var itemArray = [Item]()
-    
+    var selectedCategory : Category? {
+        didSet {
+            loadItems()
+        }
+    }
     let defaults = UserDefaults.standard
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
         super.viewDidLoad()
         print(dataFilePath!)
         
 
+        //searchBar.delegate = self
         //loadHardItems()
+        //let request : NSFetchRequest<Item> = Item.fetchRequest()
         loadItems()
         // Do any additional setup after loading the view, typically from a nib.
 //        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
@@ -61,6 +70,10 @@ class TodoListViewController: UITableViewController {
     //MARK: TableView delegate methods..
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print(indexPath.row)
+        
+        //context.delete(itemArray[indexPath.row])
+        //itemArray.remove(at: indexPath.row)
+        
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         saveItems()
 //        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
@@ -72,7 +85,7 @@ class TodoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //MARK: Add new items using alerts (Fialog Boxes)
+    //MARK: Add new items using alerts (Dialog Boxes)
     
     @IBAction func addButtonPressed(_ sender: Any) {
         var textField = UITextField()
@@ -80,8 +93,12 @@ class TodoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New Todoey Item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what will happen once the user clicks the Add Item button on our UIAlert
-            let newItem = Item()
+            
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done  = false
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             
             self.tableView.reloadData()
@@ -98,36 +115,103 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    //MARK:- Model Manipulation methods
     func saveItems()  {
-        let encoder = PropertyListEncoder()
+        //let encoder = PropertyListEncoder()
         do {
             
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+//            let data = try encoder.encode(itemArray)
+//            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error Encoding item array, \(error)")
+            print("Error Saving context , \(error)")
         }
     }
     
-    func loadItems(){
+    //the finction parameter has a default value so when the fnction is called without the parameter, we just use the default value.
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil){
+
+//        if let data = try? Data(contentsOf: dataFilePath!){
+//            let decoder = PropertyListDecoder()
+//            do {
+//                itemArray = try decoder.decode([Item].self, from: data)
+//            }catch {
+//                print("Error Decoding item array, \(error)")
+//            }
+//        }
         
-        if let data = try? Data(contentsOf: dataFilePath!){
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            }catch {
-                print("Error Decoding item array, \(error)")
-            }
+       //let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name! )
+
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
         }
+        
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Error fetching data from Context ================ \n\(error)")
+        }
+        tableView.reloadData()
+    }
+    
+    func searchCategoryItems() {
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        let predicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name! )
+        request.predicate = predicate
+        
+        //let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        //request.sortDescriptors = [sortDescriptor]
+        
+        //loadItems(with: request)
+        
+        tableView.reloadData()
     }
     
     func loadHardItems() {
         for itemTittle in itemTittlesArray {
             let newItem = Item()
             newItem.title = itemTittle
+            newItem.done  = false
             itemArray.append(newItem)
         }
-        itemArray[0].done = true //test
+        //itemArray[0].done = true //test
     }
+}
+
+//MARK:- SearchBar Methods.
+extension TodoListViewController: UISearchBarDelegate {
+    //Mark:- SearchBar Delegate methods.
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text! ) //a case and diecretic insensitive query
+    
+        
+        request.predicate = predicate
+        
+        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        
+        request.sortDescriptors = [sortDescriptor]
+        
+        loadItems(with: request)
+
+        tableView.reloadData()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+    
+    
 }
 
