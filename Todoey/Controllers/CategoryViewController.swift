@@ -8,11 +8,16 @@
 
 import UIKit
 import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
 
+    let realm = try! Realm()
+    
     var categoryNamesArray = ["Home", "Work", "Misc"]
-    var categoryArray = [Category]()
+    //var categoryArray = [Category]()
+    var categoryArray = [RealmCategory]()
+
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
@@ -111,20 +116,35 @@ class CategoryViewController: UITableViewController {
     }
     
     //MARK:- Model Manipulation methods
-    func saveCategories()  {
+    //coredata and nscoder declaration
+    //func saveCategories()  {
+
+    //realm declaration
+    func saveCategories(category: RealmCategory)  {
         //let encoder = PropertyListEncoder()
         do {
 
+            //NSCoder
             //            let data = try encoder.encode(itemArray)
             //            try data.write(to: dataFilePath!)
-            try context.save()
+            
+            // coreData
+            //try context.save()
+            
+            //Realm:
+            try realm.write {
+                realm.add(category)
+            }
+            
         } catch {
             print("Error Saving context , \(error)")
         }
     }
 
     //the finction parameter has a default value so when the fnction is called without the parameter, we just use the default value.
+    //func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()){
     func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()){
+
         do {
             categoryArray = try context.fetch(request)
         } catch {
@@ -135,7 +155,9 @@ class CategoryViewController: UITableViewController {
     //Mark:- SearchBar Delegate methods.
     func loadHardCategories() {
         for categoryName in categoryNamesArray {
-            let newCategory = Category()
+            //let newCategory = Category()
+            let newCategory = RealmCategory()
+
             newCategory.name = categoryName
             categoryArray.append(newCategory)
         }
@@ -152,13 +174,17 @@ class CategoryViewController: UITableViewController {
             //what will happen once the user clicks the Add Item button on our UIAlert
             
             
-            let newCategory = Category(context: self.context)
+            //let newCategory = Category(context: self.context)
+            let newCategory = RealmCategory()
+
             newCategory.name = textField.text!
             self.categoryArray.append(newCategory)
             
             self.tableView.reloadData()
-            self.saveCategories()
+            //self.saveCategories()
             
+            self.saveCategories(category: newCategory)
+
             //self.defaults.set(self.itemArray , forKey: "TodoListArray")
             //action.style = UIAlertActionStyle.default
         }
