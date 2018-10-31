@@ -16,7 +16,8 @@ class CategoryViewController: UITableViewController {
     
     var categoryNamesArray = ["Home", "Work", "Misc"]
     //var categoryArray = [Category]()
-    var categoryArray = [RealmCategory]()
+    //var categoryArray = [RealmCategory]()
+    var categoryArray: Results<RealmCategory>?
 
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
@@ -47,14 +48,18 @@ class CategoryViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return categoryArray.count
+        //for nscoder and coredata
+        //return categoryArray.count
+        
+        //for realm, we use the nil coalescing operator
+        return categoryArray?.count ?? 1
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // Configure the cell...
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        let category = categoryArray[indexPath.row]
-        cell.textLabel?.text = category.name
+        let category = categoryArray?[indexPath.row]
+        cell.textLabel?.text = category?.name ?? "No Categories Added Yet"
         
         return cell
     }
@@ -110,7 +115,7 @@ class CategoryViewController: UITableViewController {
         let destinationVC =  segue.destination as! TodoListViewController
         
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categoryArray[indexPath.row]
+            destinationVC.selectedCategory = categoryArray?[indexPath.row]
         }
         
     }
@@ -145,13 +150,19 @@ class CategoryViewController: UITableViewController {
     //func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()){
     func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()){
 
-        do {
-            categoryArray = try context.fetch(request)
-        } catch {
-            print("Error fetching CATEGORIES from Context ================ \n\(error)")
-        }
+//        do {
+//            categoryArray = try context.fetch(request)
+//        } catch {
+//            print("Error fetching CATEGORIES from Context ================ \n\(error)")
+//        }
     }
-
+    
+    //Realm implementation:
+    func loadCategories(){
+        categoryArray = realm.objects(RealmCategory.self)
+        
+        tableView.reloadData()
+    }
     //Mark:- SearchBar Delegate methods.
     func loadHardCategories() {
         for categoryName in categoryNamesArray {
@@ -159,7 +170,7 @@ class CategoryViewController: UITableViewController {
             let newCategory = RealmCategory()
 
             newCategory.name = categoryName
-            categoryArray.append(newCategory)
+            //categoryArray.append(newCategory)
         }
     }
    
@@ -176,9 +187,10 @@ class CategoryViewController: UITableViewController {
             
             //let newCategory = Category(context: self.context)
             let newCategory = RealmCategory()
-
             newCategory.name = textField.text!
-            self.categoryArray.append(newCategory)
+            
+            //theres no need to append things in Realm. it uses auto updating contsiners/
+            //self.categoryArray.append(newCategory)
             
             self.tableView.reloadData()
             //self.saveCategories()
