@@ -9,6 +9,7 @@
 import UIKit
 import CoreData
 import RealmSwift
+import SwipeCellKit
 
 class CategoryViewController: UITableViewController {
 
@@ -31,6 +32,7 @@ class CategoryViewController: UITableViewController {
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
         //loadHardCategories()
         
+        tableView.rowHeight = 80.0
         loadCategories()
     }
 
@@ -39,7 +41,7 @@ class CategoryViewController: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
 
-    // MARK: - Table view data source methods
+    // MARK:- Table view data source methods
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
@@ -55,12 +57,20 @@ class CategoryViewController: UITableViewController {
         return categoryArray?.count ?? 1
     }
 
+//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//        // Configure the cell...
+//        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+//        let category = categoryArray?[indexPath.row]
+//        cell.textLabel?.text = category?.name ?? "No Categories Added Yet"
+//
+//        return cell
+//    }
+    //Set the delegate property on SwipeTableViewCell:
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Configure the cell...
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        let category = categoryArray?[indexPath.row]
-        cell.textLabel?.text = category?.name ?? "No Categories Added Yet"
+        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath) as! SwipeTableViewCell
+        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Categories Added Yet"
         
+        cell.delegate = self
         return cell
     }
     /*
@@ -99,7 +109,7 @@ class CategoryViewController: UITableViewController {
     */
 
     
-    //MARK: TableView delegate methods..
+    //MARK:- TableView delegate methods..
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print(indexPath.row)
         performSegue(withIdentifier: "goToItems", sender: self)
@@ -208,4 +218,22 @@ class CategoryViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+}
+
+//MARK:- Swipe cell Delegate Methods
+extension CategoryViewController: SwipeTableViewCellDelegate {
+    //Adopt the SwipeTableViewCellDelegate protocol:
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil } //ensure we are swiping to the right..
+        
+        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
+            // handle action by updating model with deletion
+            print("ITem Deleted")
+        }
+        
+        // customize the action appearance
+        deleteAction.image = UIImage(named: "delete-icon")
+        
+        return [deleteAction]
+    }
 }
