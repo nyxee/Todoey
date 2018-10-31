@@ -90,8 +90,8 @@ class TodoListViewController: UITableViewController {
         if let item = todoItems?[indexPath.row] {
             do {
                 try realm.write {
-                    //item.done = !item.done //Update item
-                    realm.delete(item)       //delete item
+                    item.done = !item.done //Update item
+                    //realm.delete(item)       //delete item
                 }
             }catch {
                 print("Error saving done status , \(error)")
@@ -120,6 +120,8 @@ class TodoListViewController: UITableViewController {
 
                 newItem.title = textField.text!
                 newItem.done  = false
+                newItem.dateCreated = Date()
+                
                 //self.todoItems.append(newItem)
                 
                 //currentCategory.items.append(newItem) :: This method may only be called during a write transaction.
@@ -252,6 +254,18 @@ extension TodoListViewController: UISearchBarDelegate {
 //        loadItems(with: request)
 //
 //        tableView.reloadData()
+        
+        //for Realm:
+        //todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "title", ascending: true)
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+        tableView.reloadData()
+        
+        //example:
+        //var redCars = realm.objects(Car).filter("color = 'red' AND name BEGINSWITH 'BMW'")
+        
+        // using NSPredicate
+        //let aPredicate = NSPredicate(format: "color = %@ AND name BEGINSWITH %@", "red", "BMW")
+        //redCars = realm.objects(Car).filter(aPredicate)
     }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
