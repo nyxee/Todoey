@@ -229,6 +229,28 @@ extension CategoryViewController: SwipeTableViewCellDelegate {
         let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
             // handle action by updating model with deletion
             print("ITem Deleted")
+            
+            if let category = self.categoryArray?[indexPath.row] { //optional binding..
+                do {
+                    try self.realm.write {
+                        self.realm.delete(category)       //delete item
+                    }
+                }catch {
+                    print("Error saving done status , \(error)")
+                }
+            }
+            
+            //tableView.reloadData() //force the data source methods again.
+            tableView.deselectRow(at: indexPath, animated: true)
+        }
+        
+        // Optionally, you can implement the editActionsOptionsForRowAt method to customize the behavior of the swipe actions:
+        
+        func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+            var options = SwipeOptions()
+            options.expansionStyle = .destructive
+            options.transitionStyle = .border
+            return options
         }
         
         // customize the action appearance
